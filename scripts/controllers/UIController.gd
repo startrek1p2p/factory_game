@@ -70,6 +70,7 @@ func refresh_resources_panel(economy_state) -> void:
 		int(resources.get("Energia", 0)),
 		int(resources.get("Biomasa", 0))
 	]
+	resources_value_label.text += "\nTytan: %d" % int(resources.get("Tytan", 0))
 
 func refresh_selected_building_panel(selected_building: int, build_mode_enabled: bool) -> void:
 	if not build_mode_enabled:

@@ -18,6 +18,16 @@ enum BuildingType {
 	SOLAR_PANEL
 }
 
+enum ResourceType {
+	NONE,
+	IRON,
+	BIOMASS,
+	TITANIUM
+}
+
+const MIN_RESOURCE_NODES_PER_TYPE := 2
+const MAX_RESOURCE_NODES_PER_TYPE := 5
+
 enum Direction {
 	EAST,
 	NORTHEAST,
@@ -33,6 +43,7 @@ func _init():
 	initialize_grid()
 
 func initialize_grid():
+	randomize()
 	grid_data.clear()
 
 	for y in range(GRID_HEIGHT):
@@ -41,19 +52,62 @@ func initialize_grid():
 			row.append(create_empty_cell())
 		grid_data.append(row)
 
-func create_empty_cell() -> Dictionary:
+	generate_resource_nodes()
+
+func create_empty_cell(resource_type: int = ResourceType.NONE) -> Dictionary:
 	return {
 		"type": BuildingType.EMPTY,
 		"direction": Direction.EAST,
-		"item": null
+		"item": null,
+		"resource": resource_type
 	}
 
-func create_cell(building_type: int, direction: int = Direction.EAST) -> Dictionary:
+func create_cell(building_type: int, direction: int = Direction.EAST, resource_type: int = ResourceType.NONE) -> Dictionary:
 	return {
 		"type": building_type,
 		"direction": direction,
-		"item": null
+		"item": null,
+		"resource": resource_type
 	}
+
+func get_resource_at(tile: Vector2i) -> int:
+	return get_cell(tile).get("resource", ResourceType.NONE)
+
+func has_resource(tile: Vector2i) -> bool:
+	return get_resource_at(tile) != ResourceType.NONE
+
+func generate_resource_nodes() -> void:
+	_place_resource_group(ResourceType.IRON)
+	_place_resource_group(ResourceType.BIOMASS)
+	_place_resource_group(ResourceType.TITANIUM)
+
+func _place_resource_group(resource_type: int) -> void:
+	var target_amount := randi_range(MIN_RESOURCE_NODES_PER_TYPE, MAX_RESOURCE_NODES_PER_TYPE)
+	var placed := 0
+	var attempts := 0
+	var max_attempts := GRID_WIDTH * GRID_HEIGHT * 6
+
+	while placed < target_amount and attempts < max_attempts:
+		attempts += 1
+		var tile := Vector2i(randi_range(0, GRID_WIDTH - 1), randi_range(0, GRID_HEIGHT - 1))
+		if has_resource(tile):
+			continue
+
+		grid_data[tile.y][tile.x]["resource"] = resource_type
+		placed += 1
+
+	if placed < MIN_RESOURCE_NODES_PER_TYPE:
+		for y in range(GRID_HEIGHT):
+			for x in range(GRID_WIDTH):
+				if placed >= MIN_RESOURCE_NODES_PER_TYPE:
+					return
+
+				var tile := Vector2i(x, y)
+				if has_resource(tile):
+					continue
+
+				grid_data[tile.y][tile.x]["resource"] = resource_type
+				placed += 1
 
 func is_tile_in_bounds(tile: Vector2i) -> bool:
 	return tile.x >= 0 and tile.y >= 0 and tile.x < GRID_WIDTH and tile.y < GRID_HEIGHT
@@ -63,13 +117,15 @@ func place_building(tile: Vector2i, building_type: int, direction: int = Directi
 		return false
 
 	if building_type == BuildingType.EMPTY:
-		grid_data[tile.y][tile.x] = create_empty_cell()
+		var resource_type: int = get_resource_at(tile)
+		grid_data[tile.y][tile.x] = create_empty_cell(resource_type)
 		return true
 
 	if grid_data[tile.y][tile.x]["type"] != BuildingType.EMPTY:
 		return false
 
-	grid_data[tile.y][tile.x] = create_cell(building_type, direction)
+	var resource_type: int = get_resource_at(tile)
+	grid_data[tile.y][tile.x] = create_cell(building_type, direction, resource_type)
 	return true
 
 func get_cell(tile: Vector2i) -> Dictionary:

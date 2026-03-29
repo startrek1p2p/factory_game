@@ -4,11 +4,13 @@ extends RefCounted
 const RESOURCE_MINERALS := "Minerały"
 const RESOURCE_ENERGY := "Energia"
 const RESOURCE_BIOMASS := "Biomasa"
+const RESOURCE_TITANIUM := "Tytan"
 
 var resources: Dictionary = {
 	RESOURCE_MINERALS: 100,
 	RESOURCE_ENERGY: 0,
-	RESOURCE_BIOMASS: 100
+	RESOURCE_BIOMASS: 100,
+	RESOURCE_TITANIUM: 0
 }
 
 func can_afford(cost: Dictionary) -> bool:
