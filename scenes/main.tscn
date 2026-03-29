@@ -5,6 +5,22 @@
 [ext_resource type="Script" uid="uid://cdw58ipvpugin" path="res://scripts/WorldRenderer.gd" id="3_sugp2"]
 [ext_resource type="Script" path="res://scripts/Hud.gd" id="4_tnb8n"]
 
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_ui_panel"]
+bg_color = Color(0.07, 0.09, 0.12, 0.72)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.3, 0.36, 0.42, 0.35)
+corner_radius_top_left = 10
+corner_radius_top_right = 10
+corner_radius_bottom_right = 10
+corner_radius_bottom_left = 10
+content_margin_left = 14.0
+content_margin_top = 12.0
+content_margin_right = 14.0
+content_margin_bottom = 12.0
+
 [node name="Main" type="Node2D" unique_id=690783723]
 script = ExtResource("1_o5qli")
 
@@ -18,6 +34,7 @@ script = ExtResource("3_sugp2")
 
 [node name="Debug" type="Node2D" parent="." unique_id=1292233660]
 
+<<<<<<< HEAD
 [node name="HUD" type="CanvasLayer" parent="."]
 script = ExtResource("4_tnb8n")
 
@@ -89,3 +106,83 @@ layout_mode = 2
 max_value = 100.0
 value = 0.0
 show_percentage = false
+=======
+[node name="UI" type="CanvasLayer" parent="."]
+
+[node name="TopRightMargin" type="MarginContainer" parent="UI"]
+anchors_preset = 9
+anchor_left = 1.0
+anchor_right = 1.0
+offset_left = -336.0
+offset_right = -16.0
+offset_bottom = 120.0
+grow_horizontal = 0
+
+[node name="ResourcesPanel" type="PanelContainer" parent="UI/TopRightMargin"]
+size_flags_horizontal = 3
+theme_override_styles/panel = SubResource("StyleBoxFlat_ui_panel")
+
+[node name="ResourcesVBox" type="VBoxContainer" parent="UI/TopRightMargin/ResourcesPanel"]
+theme_override_constants/separation = 8
+
+[node name="ResourcesHeader" type="Label" parent="UI/TopRightMargin/ResourcesPanel/ResourcesVBox"]
+text = "Surowce"
+theme_override_colors/font_color = Color(0.9, 0.95, 1, 0.95)
+theme_override_font_sizes/font_size = 18
+
+[node name="ResourcesValue" type="Label" parent="UI/TopRightMargin/ResourcesPanel/ResourcesVBox"]
+text = "Minerały: 0\nEnergia: 0\nBiomasa/Impuls: 0"
+autowrap_mode = 2
+theme_override_colors/font_color = Color(0.84, 0.88, 0.93, 0.95)
+theme_override_font_sizes/font_size = 15
+
+[node name="BottomRightMargin" type="MarginContainer" parent="UI"]
+anchors_preset = 10
+anchor_left = 1.0
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = -336.0
+offset_top = -216.0
+offset_right = -16.0
+offset_bottom = -16.0
+grow_horizontal = 0
+grow_vertical = 0
+
+[node name="SelectedBuildingPanel" type="PanelContainer" parent="UI/BottomRightMargin"]
+size_flags_horizontal = 3
+theme_override_styles/panel = SubResource("StyleBoxFlat_ui_panel")
+
+[node name="BuildingVBox" type="VBoxContainer" parent="UI/BottomRightMargin/SelectedBuildingPanel"]
+theme_override_constants/separation = 8
+
+[node name="BuildingHeader" type="Label" parent="UI/BottomRightMargin/SelectedBuildingPanel/BuildingVBox"]
+text = "Wybrany budynek"
+theme_override_colors/font_color = Color(0.9, 0.95, 1, 0.95)
+theme_override_font_sizes/font_size = 18
+
+[node name="BuildingName" type="Label" parent="UI/BottomRightMargin/SelectedBuildingPanel/BuildingVBox"]
+text = "Brak wybranego budynku"
+autowrap_mode = 2
+theme_override_colors/font_color = Color(0.84, 0.88, 0.93, 0.95)
+theme_override_font_sizes/font_size = 16
+
+[node name="BuildingKind" type="Label" parent="UI/BottomRightMargin/SelectedBuildingPanel/BuildingVBox"]
+text = "Rodzaj: —"
+autowrap_mode = 2
+theme_override_colors/font_color = Color(0.78, 0.84, 0.9, 0.95)
+theme_override_font_sizes/font_size = 14
+
+[node name="BuildingDescription" type="Label" parent="UI/BottomRightMargin/SelectedBuildingPanel/BuildingVBox"]
+text = "Wybierz klawisz 1-4, aby wejść w tryb stawiania."
+autowrap_mode = 2
+theme_override_colors/font_color = Color(0.78, 0.84, 0.9, 0.95)
+theme_override_font_sizes/font_size = 14
+
+[node name="BuildingCost" type="Label" parent="UI/BottomRightMargin/SelectedBuildingPanel/BuildingVBox"]
+visible = false
+text = "Koszt:"
+autowrap_mode = 2
+theme_override_colors/font_color = Color(0.9, 0.95, 1, 0.95)
+theme_override_font_sizes/font_size = 14
+>>>>>>> main
