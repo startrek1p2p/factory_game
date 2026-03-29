@@ -29,7 +29,7 @@ func _ready() -> void:
 	print("Start systemu budowania")
 	_sync_renderer_state()
 	ui_controller.update_ui_margins(get_viewport_rect().size)
-	ui_controller.refresh_resources_panel(simulation.economy_state)
+	ui_controller.refresh_resources_panel(simulation.economy_state, simulation.get_power_debug_stats())
 	ui_controller.refresh_selected_building_panel(input_controller.selected_building, input_controller.build_mode_enabled)
 	renderer.queue_redraw()
 
@@ -66,7 +66,7 @@ func _on_build_requested(tile: Vector2i, building_type: int, direction: int) -> 
 
 	simulation.economy_state.spend(cost)
 	grid.place_building(tile, building_type, direction)
-	ui_controller.refresh_resources_panel(simulation.economy_state)
+	ui_controller.refresh_resources_panel(simulation.economy_state, simulation.get_power_debug_stats())
 	renderer.queue_redraw()
 
 func _on_clear_requested(tile: Vector2i) -> void:
@@ -77,7 +77,7 @@ func _on_quit_requested() -> void:
 	get_tree().quit()
 
 func _on_simulation_tick_completed() -> void:
-	ui_controller.refresh_resources_panel(simulation.economy_state)
+	ui_controller.refresh_resources_panel(simulation.economy_state, simulation.get_power_debug_stats())
 	print("Zasoby:", simulation.economy_state.resources)
 
 func _sync_renderer_state() -> void:

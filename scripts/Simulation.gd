@@ -9,10 +9,15 @@ var planned_moves: Array = []
 var reserved_targets: Dictionary = {}
 var reserved_sources: Dictionary = {}
 var active_mines: Dictionary = {}
+var mine_to_component: Dictionary = {}
+var component_has_panel: Dictionary = {}
+var powered_mines_count: int = 0
+var unpowered_mines_count: int = 0
 
 var energy_available: int = 0
 const SOLAR_OUTPUT_PER_TICK := 10
 const MINE_ENERGY_COST_PER_TICK := 10
+const ENERGY_NODE_CAPACITY := -1
 
 func _init(grid_manager):
 	grid = grid_manager
@@ -33,6 +38,7 @@ func tick():
 	var input_snapshot: Dictionary = snapshot_items_from_grid()
 	var next_state: Dictionary = input_snapshot.duplicate(true)
 	energy_available = stage_collect_energy_from_solar_panels()
+	build_energy_network_components()
 	prepare_active_mines_from_snapshot()
 
 	stage_mines_generate_into_next_state(input_snapshot, next_state)
@@ -61,6 +67,8 @@ func stage_mines_generate_into_next_state(input_snapshot: Dictionary, next_state
 
 			if cell["type"] != grid.BuildingType.MINE:
 				continue
+			if not is_mine_powered(tile):
+				continue
 			if not is_mine_active(tile):
 				continue
 			if not grid.has_resource(tile):
@@ -76,6 +84,8 @@ func collect_mine_moves_from_snapshot(input_snapshot: Dictionary):
 			var cell = grid.get_cell(tile)
 
 			if cell["type"] != grid.BuildingType.MINE:
+				continue
+			if not is_mine_powered(tile):
 				continue
 			if not is_mine_active(tile):
 				continue
@@ -173,27 +183,45 @@ func stage_collect_energy_from_solar_panels() -> int:
 	return generated_energy
 
 func prepare_active_mines_from_snapshot() -> void:
+	active_mines.clear()
+	powered_mines_count = 0
+	unpowered_mines_count = 0
+
 	if MINE_ENERGY_COST_PER_TICK <= 0:
 		for y in range(grid.GRID_HEIGHT):
 			for x in range(grid.GRID_WIDTH):
 				var tile = Vector2i(x, y)
 				var cell = grid.get_cell(tile)
-				if cell["type"] == grid.BuildingType.MINE:
-					active_mines[tile] = true
+				if cell["type"] != grid.BuildingType.MINE:
+					continue
+				if not is_mine_powered(tile):
+					unpowered_mines_count += 1
+					continue
+				active_mines[tile] = true
+				powered_mines_count += 1
 		return
 
+	var connected_mines: Array[Vector2i] = []
 	for y in range(grid.GRID_HEIGHT):
 		for x in range(grid.GRID_WIDTH):
 			var tile = Vector2i(x, y)
 			var cell = grid.get_cell(tile)
 			if cell["type"] != grid.BuildingType.MINE:
 				continue
+			if not is_mine_powered(tile):
+				unpowered_mines_count += 1
+				continue
+			connected_mines.append(tile)
 
-			if energy_available < MINE_ENERGY_COST_PER_TICK:
-				return
+	for tile in connected_mines:
+		if energy_available < MINE_ENERGY_COST_PER_TICK:
+			break
 
-			energy_available -= MINE_ENERGY_COST_PER_TICK
-			active_mines[tile] = true
+		energy_available -= MINE_ENERGY_COST_PER_TICK
+		active_mines[tile] = true
+		powered_mines_count += 1
+
+	unpowered_mines_count += connected_mines.size() - powered_mines_count
 
 func is_mine_active(tile: Vector2i) -> bool:
 	return active_mines.has(tile)
@@ -201,6 +229,150 @@ func is_mine_active(tile: Vector2i) -> bool:
 func sync_energy_to_economy_state() -> void:
 	economy_state.resources[EconomyStateScript.RESOURCE_ENERGY] = energy_available
 
+func build_energy_network_components() -> void:
+	mine_to_component.clear()
+	component_has_panel.clear()
+	var traversable_tiles: Dictionary = {}
+	var traversable_list: Array[Vector2i] = []
+	var energy_nodes: Array[Vector2i] = []
+
+	for y in range(grid.GRID_HEIGHT):
+		for x in range(grid.GRID_WIDTH):
+			var tile = Vector2i(x, y)
+			var building_type = grid.get_building_at(tile)
+			if _is_energy_network_tile(building_type):
+				traversable_tiles[tile] = true
+				traversable_list.append(tile)
+			if building_type == grid.BuildingType.ENERGY_NODE:
+				energy_nodes.append(tile)
+	var assigned_node_by_tile: Dictionary = _build_non_node_assignments(traversable_list, energy_nodes)
+
+	var visited: Dictionary = {}
+	var component_id := 0
+
+	for tile in traversable_tiles.keys():
+		if visited.has(tile):
+			continue
+		_build_component_from_seed(tile, component_id, traversable_tiles, traversable_list, energy_nodes, assigned_node_by_tile, visited)
+		component_id += 1
+
+func _build_component_from_seed(seed_tile: Vector2i, component_id: int, traversable_tiles: Dictionary, traversable_list: Array[Vector2i], energy_nodes: Array[Vector2i], assigned_node_by_tile: Dictionary, visited: Dictionary) -> void:
+	var stack: Array[Vector2i] = [seed_tile]
+	visited[seed_tile] = true
+	var has_panel := false
+
+	while not stack.is_empty():
+		var current_tile: Vector2i = stack.pop_back()
+		var current_type = grid.get_building_at(current_tile)
+
+		if current_type == grid.BuildingType.SOLAR_PANEL:
+			has_panel = true
+		elif current_type == grid.BuildingType.MINE:
+			mine_to_component[current_tile] = component_id
+
+		var energy_neighbors: Array[Vector2i] = _get_energy_neighbors(current_tile, traversable_tiles, traversable_list, energy_nodes, assigned_node_by_tile)
+		for neighbor_tile in energy_neighbors:
+			if visited.has(neighbor_tile):
+				continue
+			visited[neighbor_tile] = true
+			stack.append(neighbor_tile)
+
+	component_has_panel[component_id] = has_panel
+
+func _is_energy_network_tile(building_type: int) -> bool:
+	return building_type == grid.BuildingType.SOLAR_PANEL \
+		or building_type == grid.BuildingType.ENERGY_NODE \
+		or building_type == grid.BuildingType.MINE
+
+func _get_energy_neighbors(tile: Vector2i, traversable_tiles: Dictionary, traversable_list: Array[Vector2i], energy_nodes: Array[Vector2i], assigned_node_by_tile: Dictionary) -> Array[Vector2i]:
+	var neighbors: Array[Vector2i] = []
+	var unique: Dictionary = {}
+
+	for direction in range(6):
+		var adjacent_tile = grid.get_neighbor_tile(tile, direction)
+		if not grid.is_tile_in_bounds(adjacent_tile):
+			continue
+		if not traversable_tiles.has(adjacent_tile):
+			continue
+		unique[adjacent_tile] = true
+
+	var tile_type: int = int(grid.get_building_at(tile))
+	if tile_type == grid.BuildingType.ENERGY_NODE:
+		for other_tile in energy_nodes:
+			if other_tile == tile:
+				continue
+			if _is_in_energy_node_range(tile, other_tile):
+				unique[other_tile] = true
+		for other_tile in traversable_list:
+			if other_tile == tile:
+				continue
+			if assigned_node_by_tile.get(other_tile, null) == tile:
+				unique[other_tile] = true
+	else:
+		var assigned_node = assigned_node_by_tile.get(tile, null)
+		if assigned_node != null:
+			unique[assigned_node] = true
+
+	for linked_tile in unique.keys():
+		neighbors.append(linked_tile)
+
+	return neighbors
+
+func _is_in_energy_node_range(node_tile: Vector2i, target_tile: Vector2i) -> bool:
+	return _hex_distance(node_tile, target_tile) <= grid.ENERGY_NODE_RANGE
+
+func _hex_distance(a: Vector2i, b: Vector2i) -> int:
+	var axial_a: Vector2i = grid.offset_to_axial(a)
+	var axial_b: Vector2i = grid.offset_to_axial(b)
+	var dq := axial_a.x - axial_b.x
+	var dr := axial_a.y - axial_b.y
+	var ds := (-axial_a.x - axial_a.y) - (-axial_b.x - axial_b.y)
+	return int((abs(dq) + abs(dr) + abs(ds)) / 2)
+
+func _build_non_node_assignments(traversable_list: Array[Vector2i], energy_nodes: Array[Vector2i]) -> Dictionary:
+	var assignments: Dictionary = {}
+	for tile in traversable_list:
+		var building_type: int = int(grid.get_building_at(tile))
+		if building_type == grid.BuildingType.ENERGY_NODE:
+			continue
+		var assigned_node = _select_best_energy_node_for_tile(tile, energy_nodes)
+		if assigned_node != null:
+			assignments[tile] = assigned_node
+	return assignments
+
+func _select_best_energy_node_for_tile(tile: Vector2i, energy_nodes: Array[Vector2i]):
+	var best_distance := INF
+	var tied_nodes: Array[Vector2i] = []
+
+	for node_tile in energy_nodes:
+		var distance := _hex_distance(node_tile, tile)
+		if distance > grid.ENERGY_NODE_RANGE:
+			continue
+		if distance < best_distance:
+			best_distance = distance
+			tied_nodes = [node_tile]
+		elif distance == best_distance:
+			tied_nodes.append(node_tile)
+
+	if tied_nodes.is_empty():
+		return null
+	if tied_nodes.size() == 1:
+		return tied_nodes[0]
+
+	var hash_value := int(abs(tile.x * 73856093 + tile.y * 19349663))
+	return tied_nodes[hash_value % tied_nodes.size()]
+
+func is_mine_powered(tile: Vector2i) -> bool:
+	var component_id = mine_to_component.get(tile, null)
+	if component_id == null:
+		return false
+	return bool(component_has_panel.get(component_id, false))
+
+func get_power_debug_stats() -> Dictionary:
+	return {
+		"powered_mines": powered_mines_count,
+		"unpowered_mines": unpowered_mines_count
+	}
 func _resource_to_item_name(resource_type: int) -> String:
 	match resource_type:
 		grid.ResourceType.IRON:

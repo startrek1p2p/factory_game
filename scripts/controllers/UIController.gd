@@ -36,6 +36,12 @@ const BUILDING_DATA := {
 		"kind": "energia",
 		"description": "Zapewnia stałą moc dla infrastruktury wydobywczej.",
 		"cost": {"Minerały": 5, "Biomasa": 1}
+	},
+	GridManagerScript.BuildingType.ENERGY_NODE: {
+		"name": "Węzeł energetyczny",
+		"kind": "energia",
+		"description": "Przekaźnik sieci energetycznej łączący panele z kopalniami.",
+		"cost": {"Minerały": 3, "Energia": 1}
 	}
 }
 
@@ -63,12 +69,16 @@ func setup(main_node: Node) -> void:
 	building_cost_label = main_node.get_node("UI/BottomRightMargin/SelectedBuildingPanel/BuildingVBox/BuildingCost")
 	status_label = main_node.get_node("UI/TopRightMargin/ResourcesPanel/ResourcesVBox/StatusLabel")
 
-func refresh_resources_panel(economy_state) -> void:
+func refresh_resources_panel(economy_state, power_debug: Dictionary = {}) -> void:
 	var resources: Dictionary = economy_state.resources
-	resources_value_label.text = "Minerały: %d\nEnergia: %d\nBiomasa: %d" % [
+	var powered_mines := int(power_debug.get("powered_mines", 0))
+	var unpowered_mines := int(power_debug.get("unpowered_mines", 0))
+	resources_value_label.text = "Minerały: %d\nEnergia: %d\nBiomasa: %d\nKopalnie zasilane: %d\nKopalnie bez zasilania: %d" % [
 		int(resources.get("Minerały", 0)),
 		int(resources.get("Energia", 0)),
-		int(resources.get("Biomasa", 0))
+		int(resources.get("Biomasa", 0)),
+		powered_mines,
+		unpowered_mines
 	]
 	resources_value_label.text += "\nTytan: %d" % int(resources.get("Tytan", 0))
 
@@ -76,7 +86,7 @@ func refresh_selected_building_panel(selected_building: int, build_mode_enabled:
 	if not build_mode_enabled:
 		building_name_label.text = "Brak wybranego budynku"
 		building_kind_label.text = "Rodzaj: —"
-		building_description_label.text = "Wybierz klawisz 1-5, aby wejść w tryb stawiania."
+		building_description_label.text = "Wybierz klawisz 1-6, aby wejść w tryb stawiania."
 		building_cost_label.visible = false
 		return
 
