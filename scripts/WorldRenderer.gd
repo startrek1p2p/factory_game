@@ -1,7 +1,7 @@
 class_name WorldRenderer
 extends Node2D
 
-var grid: GridManager
+var grid
 var hovered_tile: Vector2i = Vector2i(-1, -1)
 var selected_building: int = 0
 var selected_direction: int = 0
@@ -19,7 +19,7 @@ func _draw():
 func draw_grid():
 	for y in range(grid.GRID_HEIGHT):
 		for x in range(grid.GRID_WIDTH):
-			var center := grid.grid_to_world(Vector2i(x, y))
+			var center = grid.grid_to_world(Vector2i(x, y))
 			draw_polyline(_hex_outline_points(center), Color(0.35, 0.35, 0.35), 1.0)
 
 func draw_buildings():
@@ -32,7 +32,7 @@ func draw_buildings():
 			if building_type == grid.BuildingType.EMPTY:
 				continue
 
-			var center := grid.grid_to_world(tile)
+			var center = grid.grid_to_world(tile)
 			var polygon := _hex_fill_points(center)
 
 			match building_type:
@@ -59,14 +59,14 @@ func draw_items():
 			if item == null:
 				continue
 
-			var center := grid.grid_to_world(tile)
+			var center = grid.grid_to_world(tile)
 			draw_circle(center, 6.0, Color(0.9, 0.9, 0.1))
 
 func draw_build_preview():
 	if not grid.is_tile_in_bounds(hovered_tile):
 		return
 
-	var center := grid.grid_to_world(hovered_tile)
+	var center = grid.grid_to_world(hovered_tile)
 	var polygon := _hex_fill_points(center)
 
 	var color := Color(1, 1, 1, 0.3)
@@ -93,15 +93,15 @@ func draw_hovered_tile():
 	if not grid.is_tile_in_bounds(hovered_tile):
 		return
 
-	var center := grid.grid_to_world(hovered_tile)
+	var center = grid.grid_to_world(hovered_tile)
 	draw_colored_polygon(_hex_fill_points(center), Color(1.0, 1.0, 0.0, 0.18))
 
 func draw_direction_arrow(center: Vector2, direction: int, color: Color):
-	var dir := grid.direction_to_vector(direction)
+	var dir = grid.direction_to_vector(direction)
 
-	var shaft_len := grid.HEX_RADIUS * 0.55
-	var head_len := grid.HEX_RADIUS * 0.28
-	var head_width := grid.HEX_RADIUS * 0.22
+	var shaft_len = grid.HEX_RADIUS * 0.55
+	var head_len = grid.HEX_RADIUS * 0.28
+	var head_width = grid.HEX_RADIUS * 0.22
 
 	var tip = center + dir * shaft_len
 	var base = center - dir * (grid.HEX_RADIUS * 0.2)

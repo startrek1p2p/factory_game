@@ -1,13 +1,13 @@
 class_name Simulation
 extends RefCounted
 
-var grid: GridManager
+var grid
 var storage_count: int = 0
 var planned_moves: Array = []
 var reserved_targets: Dictionary = {}
 var reserved_sources: Dictionary = {}
 
-func _init(grid_manager: GridManager):
+func _init(grid_manager):
 	grid = grid_manager
 
 func tick():
