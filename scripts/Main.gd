@@ -1,184 +1,76 @@
 extends Node2D
 
-var grid := GridManager.new()
-var simulation := Simulation.new(grid)
+const GridManagerScript = preload("res://scripts/GridManager.gd")
+const SimulationScript = preload("res://scripts/Simulation.gd")
+const InputControllerScript = preload("res://scripts/controllers/InputController.gd")
+const UIControllerScript = preload("res://scripts/controllers/UIController.gd")
+const SimulationRunnerScript = preload("res://scripts/controllers/SimulationRunner.gd")
 
-var hovered_tile: Vector2i = Vector2i(-1, -1)
-var selected_building: int = GridManager.BuildingType.WALL
-var selected_direction: int = GridManager.Direction.EAST
-var build_mode_enabled: bool = false
+var grid = GridManagerScript.new()
+var simulation = SimulationScript.new(grid)
+var input_controller = InputControllerScript.new()
+var ui_controller = UIControllerScript.new()
+var simulation_runner = SimulationRunnerScript.new(simulation)
 
-var tick_timer: float = 0.0
-var tick_interval: float = 0.3
+@onready var renderer = $World/Renderer
 
-const BASE_UI_MARGIN := 16.0
-const MAX_PANEL_WIDTH := 320.0
-
-const BUILDING_DATA := {
-	GridManager.BuildingType.WALL: {
-		"name": "Ściana",
-		"kind": "obrona",
-		"description": "Prosta przeszkoda blokująca przejazd i chroniąca kluczowe sektory.",
-		"cost": {"Minerały": 4}
-	},
-	GridManager.BuildingType.MINE: {
-		"name": "Kopalnia",
-		"kind": "kopalnia",
-		"description": "Wydobywa minerały i przekazuje je dalej przez logistykę.",
-		"cost": {"Minerały": 6, "Energia": 2}
-	},
-	GridManager.BuildingType.CONVEYOR: {
-		"name": "Przenośnik",
-		"kind": "transport",
-		"description": "Transportuje surowce do sąsiednich budynków zgodnie z kierunkiem.",
-		"cost": {"Minerały": 2}
-	},
-	GridManager.BuildingType.STORAGE: {
-		"name": "Magazyn",
-		"kind": "magazyn",
-		"description": "Przyjmuje i gromadzi dostarczone surowce.",
-		"cost": {"Minerały": 8, "Energia": 1}
-	}
-}
-
-@onready var renderer: WorldRenderer = $World/Renderer
-@onready var resources_panel: PanelContainer = $UI/TopRightMargin/ResourcesPanel
-@onready var resources_value_label: Label = $UI/TopRightMargin/ResourcesPanel/ResourcesVBox/ResourcesValue
-@onready var building_panel: PanelContainer = $UI/BottomRightMargin/SelectedBuildingPanel
-@onready var building_name_label: Label = $UI/BottomRightMargin/SelectedBuildingPanel/BuildingVBox/BuildingName
-@onready var building_kind_label: Label = $UI/BottomRightMargin/SelectedBuildingPanel/BuildingVBox/BuildingKind
-@onready var building_description_label: Label = $UI/BottomRightMargin/SelectedBuildingPanel/BuildingVBox/BuildingDescription
-@onready var building_cost_label: Label = $UI/BottomRightMargin/SelectedBuildingPanel/BuildingVBox/BuildingCost
-
-func _ready():
+func _ready() -> void:
 	renderer.grid = grid
-	renderer.hovered_tile = hovered_tile
-	renderer.selected_building = selected_building
-	renderer.selected_direction = selected_direction
+	input_controller.setup_default_actions()
+	ui_controller.setup(self)
+
+	input_controller.build_mode_changed.connect(_on_build_mode_changed)
+	input_controller.direction_changed.connect(_on_direction_changed)
+	input_controller.build_requested.connect(_on_build_requested)
+	input_controller.clear_requested.connect(_on_clear_requested)
+	input_controller.quit_requested.connect(_on_quit_requested)
+	simulation_runner.tick_completed.connect(_on_simulation_tick_completed)
 
 	print("Start systemu budowania")
-	update_ui_margins()
-	refresh_resources_panel()
-	refresh_selected_building_panel()
-	queue_redraw()
+	_sync_renderer_state()
+	ui_controller.update_ui_margins(get_viewport_rect().size)
+	ui_controller.refresh_resources_panel(simulation.storage_count)
+	ui_controller.refresh_selected_building_panel(input_controller.selected_building, input_controller.build_mode_enabled)
+	renderer.queue_redraw()
 
-func _process(delta):
-	handle_build_selection()
-	handle_simulation(delta)
-	update_ui_margins()
+func _process(delta: float) -> void:
+	input_controller.handle_selection_actions()
+	simulation_runner.process(delta)
+	ui_controller.update_ui_margins(get_viewport_rect().size)
 
-	var mouse_pos = get_global_mouse_position()
-	hovered_tile = grid.world_to_grid(mouse_pos)
+	var mouse_pos := get_global_mouse_position()
+	input_controller.update_hovered_tile(mouse_pos, grid)
+	_sync_renderer_state()
+	renderer.queue_redraw()
 
-	renderer.hovered_tile = hovered_tile
-	renderer.selected_building = selected_building
+func _input(event: InputEvent) -> void:
+	input_controller.handle_input_event(event, get_global_mouse_position(), grid)
+
+func _on_build_mode_changed(_selected_building: int, _build_mode_enabled: bool) -> void:
+	ui_controller.refresh_selected_building_panel(input_controller.selected_building, input_controller.build_mode_enabled)
+	renderer.queue_redraw()
+
+func _on_direction_changed(selected_direction: int) -> void:
+	print("selected_direction =", selected_direction)
 	renderer.selected_direction = selected_direction
 	renderer.queue_redraw()
 
-func _input(event):
-	if event is InputEventKey and event.pressed and not event.echo:
-		if event.keycode == KEY_ESCAPE:
-			get_tree().quit()
-		if event.keycode == KEY_R:
-			selected_direction = (selected_direction + 1) % 6
-			print("selected_direction =", selected_direction)
-			renderer.selected_direction = selected_direction
-			renderer.queue_redraw()
-		if event.keycode == KEY_0:
-			build_mode_enabled = false
-			refresh_selected_building_panel()
+func _on_build_requested(tile: Vector2i, building_type: int, direction: int) -> void:
+	grid.place_building(tile, building_type, direction)
+	renderer.queue_redraw()
 
-	if event is InputEventMouseButton and event.pressed:
-		var mouse_pos = get_global_mouse_position()
-		var tile = grid.world_to_grid(mouse_pos)
+func _on_clear_requested(tile: Vector2i) -> void:
+	grid.place_building(tile, GridManagerScript.BuildingType.EMPTY)
+	renderer.queue_redraw()
 
-		if not grid.is_tile_in_bounds(tile):
-			return
+func _on_quit_requested() -> void:
+	get_tree().quit()
 
-		if event.button_index == MOUSE_BUTTON_LEFT:
-			if not build_mode_enabled:
-				return
-			grid.place_building(tile, selected_building, selected_direction)
-			renderer.queue_redraw()
+func _on_simulation_tick_completed(storage_count: int) -> void:
+	ui_controller.refresh_resources_panel(storage_count)
+	print("Storage:", storage_count)
 
-		elif event.button_index == MOUSE_BUTTON_RIGHT:
-			grid.place_building(tile, GridManager.BuildingType.EMPTY)
-			renderer.queue_redraw()
-
-func handle_build_selection():
-	var previous_selection := selected_building
-	var previous_mode := build_mode_enabled
-
-	if Input.is_key_pressed(KEY_1):
-		selected_building = GridManager.BuildingType.WALL
-		build_mode_enabled = true
-	elif Input.is_key_pressed(KEY_2):
-		selected_building = GridManager.BuildingType.MINE
-		build_mode_enabled = true
-	elif Input.is_key_pressed(KEY_3):
-		selected_building = GridManager.BuildingType.CONVEYOR
-		build_mode_enabled = true
-	elif Input.is_key_pressed(KEY_4):
-		selected_building = GridManager.BuildingType.STORAGE
-		build_mode_enabled = true
-
-	if previous_selection != selected_building or previous_mode != build_mode_enabled:
-		refresh_selected_building_panel()
-
-func handle_simulation(delta: float):
-	tick_timer += delta
-
-	if tick_timer >= tick_interval:
-		tick_timer = 0.0
-		simulation.tick()
-		refresh_resources_panel()
-		print("Storage:", simulation.storage_count)
-
-func refresh_resources_panel():
-	var minerals := simulation.storage_count
-	var energy := 0
-	var biomass := 0
-
-	resources_value_label.text = "Minerały: %d\nEnergia: %d\nBiomasa/Impuls: %d" % [minerals, energy, biomass]
-
-func refresh_selected_building_panel():
-	if not build_mode_enabled:
-		building_name_label.text = "Brak wybranego budynku"
-		building_kind_label.text = "Rodzaj: —"
-		building_description_label.text = "Wybierz klawisz 1-4, aby wejść w tryb stawiania."
-		building_cost_label.visible = false
-		return
-
-	var building_info: Dictionary = BUILDING_DATA.get(selected_building, {})
-	var building_name: String = building_info.get("name", "Nieznany budynek")
-	var building_kind: String = building_info.get("kind", "nieokreślony")
-	var building_description: String = building_info.get("description", "Brak opisu.")
-	var cost_data: Dictionary = building_info.get("cost", {})
-
-	building_name_label.text = building_name
-	building_kind_label.text = "Rodzaj: %s" % building_kind.capitalize()
-	building_description_label.text = building_description
-
-	if cost_data.is_empty():
-		building_cost_label.visible = false
-	else:
-		building_cost_label.visible = true
-		building_cost_label.text = "Koszt: %s" % format_cost_data(cost_data)
-
-func format_cost_data(cost_data: Dictionary) -> String:
-	var entries: Array[String] = []
-	for resource_name in cost_data.keys():
-		entries.append("%s %s" % [str(cost_data[resource_name]), resource_name])
-	return ", ".join(entries)
-
-func update_ui_margins():
-	var viewport_size := get_viewport_rect().size
-	var responsive_margin := maxf(BASE_UI_MARGIN, minf(viewport_size.x, viewport_size.y) * 0.02)
-
-	$UI/TopRightMargin.offset_top = responsive_margin
-	$UI/TopRightMargin.offset_right = -responsive_margin
-	$UI/BottomRightMargin.offset_bottom = -responsive_margin
-	$UI/BottomRightMargin.offset_right = -responsive_margin
-
-	resources_panel.custom_minimum_size.x = minf(MAX_PANEL_WIDTH, viewport_size.x * 0.36)
-	building_panel.custom_minimum_size.x = minf(MAX_PANEL_WIDTH, viewport_size.x * 0.36)
+func _sync_renderer_state() -> void:
+	renderer.hovered_tile = input_controller.hovered_tile
+	renderer.selected_building = input_controller.selected_building
+	renderer.selected_direction = input_controller.selected_direction
