@@ -77,8 +77,8 @@ func draw_energy_links():
 
 	for y in range(grid.GRID_HEIGHT):
 		for x in range(grid.GRID_WIDTH):
-			var tile := Vector2i(x, y)
-			var building_type := grid.get_building_at(tile)
+			var tile: Vector2i = Vector2i(x, y)
+			var building_type: int = int(grid.get_building_at(tile))
 			if not _is_energy_link_candidate(building_type):
 				continue
 			all_energy_tiles.append(tile)
@@ -86,13 +86,13 @@ func draw_energy_links():
 				energy_nodes.append(tile)
 
 	for node_tile in energy_nodes:
-		var node_center := grid.grid_to_world(node_tile)
+		var node_center: Vector2 = grid.grid_to_world(node_tile)
 		for target_tile in all_energy_tiles:
 			if target_tile == node_tile:
 				continue
 			if not _is_in_energy_node_range(node_tile, target_tile):
 				continue
-			var target_center := grid.grid_to_world(target_tile)
+			var target_center: Vector2 = grid.grid_to_world(target_tile)
 			draw_line(node_center, target_center, ENERGY_LINK_COLOR, ENERGY_LINK_WIDTH)
 
 func draw_build_preview():
