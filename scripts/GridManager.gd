@@ -175,6 +175,6 @@ func get_neighbor_tile(tile: Vector2i, direction: int) -> Vector2i:
 	return tile
 
 func direction_to_vector(direction: int) -> Vector2:
-	var angle_deg := -30.0 + float(direction) * 60.0
+	var angle_deg := -60.0 * float(direction)
 	var angle_rad := deg_to_rad(angle_deg)
 	return Vector2(cos(angle_rad), sin(angle_rad))
