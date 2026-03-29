@@ -5,7 +5,7 @@ var simulation := Simulation.new(grid)
 
 var hovered_tile: Vector2i = Vector2i(-1, -1)
 var selected_building: int = GridManager.BuildingType.WALL
-var selected_direction: int = GridManager.Direction.RIGHT
+var selected_direction: int = GridManager.Direction.EAST
 
 var tick_timer: float = 0.0
 var tick_interval: float = 0.3
@@ -39,7 +39,7 @@ func _process(delta):
 func _input(event):
 	if event is InputEventKey and event.pressed and not event.echo:
 		if event.keycode == KEY_R:
-			selected_direction = (selected_direction + 1) % 4
+			selected_direction = (selected_direction + 1) % 6
 			print("selected_direction =", selected_direction)
 			renderer.selected_direction = selected_direction
 			renderer.queue_redraw()

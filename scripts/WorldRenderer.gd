@@ -4,7 +4,7 @@ extends Node2D
 var grid: GridManager
 var hovered_tile: Vector2i = Vector2i(-1, -1)
 var selected_building: int = 0
-var selected_direction: int = 1
+var selected_direction: int = 0
 
 func _draw():
 	if grid == null:
@@ -17,15 +17,10 @@ func _draw():
 	draw_build_preview()
 
 func draw_grid():
-	for x in range(grid.GRID_WIDTH + 1):
-		var from = Vector2(x * grid.TILE_SIZE, 0)
-		var to = Vector2(x * grid.TILE_SIZE, grid.GRID_HEIGHT * grid.TILE_SIZE)
-		draw_line(from, to, Color(0.35, 0.35, 0.35), 1.0)
-
-	for y in range(grid.GRID_HEIGHT + 1):
-		var from = Vector2(0, y * grid.TILE_SIZE)
-		var to = Vector2(grid.GRID_WIDTH * grid.TILE_SIZE, y * grid.TILE_SIZE)
-		draw_line(from, to, Color(0.35, 0.35, 0.35), 1.0)
+	for y in range(grid.GRID_HEIGHT):
+		for x in range(grid.GRID_WIDTH):
+			var center := grid.grid_to_world(Vector2i(x, y))
+			draw_polyline(_hex_outline_points(center), Color(0.35, 0.35, 0.35), 1.0)
 
 func draw_buildings():
 	for y in range(grid.GRID_HEIGHT):
@@ -37,22 +32,23 @@ func draw_buildings():
 			if building_type == grid.BuildingType.EMPTY:
 				continue
 
-			var world_pos = grid.grid_to_world(tile)
-			var rect = Rect2(world_pos, Vector2(grid.TILE_SIZE, grid.TILE_SIZE))
+			var center := grid.grid_to_world(tile)
+			var polygon := _hex_fill_points(center)
 
 			match building_type:
 				grid.BuildingType.WALL:
-					draw_rect(rect, Color(0.5, 0.5, 0.5), true)
+					draw_colored_polygon(polygon, Color(0.5, 0.5, 0.5))
 
 				grid.BuildingType.MINE:
-					draw_rect(rect, Color(0.2, 0.6, 1.0), true)
+					draw_colored_polygon(polygon, Color(0.2, 0.6, 1.0))
+					draw_direction_arrow(center, cell["direction"], Color(0.05, 0.2, 0.35, 0.9))
 
 				grid.BuildingType.CONVEYOR:
-					draw_rect(rect, Color(1.0, 0.7, 0.2), true)
-					draw_direction_arrow(rect, cell["direction"], Color(0.2, 0.2, 0.2, 1.0))
+					draw_colored_polygon(polygon, Color(1.0, 0.7, 0.2))
+					draw_direction_arrow(center, cell["direction"], Color(0.2, 0.2, 0.2, 1.0))
 
 				grid.BuildingType.STORAGE:
-					draw_rect(rect, Color(0.3, 0.9, 0.3), true)
+					draw_colored_polygon(polygon, Color(0.3, 0.9, 0.3))
 
 func draw_items():
 	for y in range(grid.GRID_HEIGHT):
@@ -63,16 +59,15 @@ func draw_items():
 			if item == null:
 				continue
 
-			var world_pos = grid.grid_to_world(tile)
-			var center = world_pos + Vector2(grid.TILE_SIZE / 2, grid.TILE_SIZE / 2)
+			var center := grid.grid_to_world(tile)
 			draw_circle(center, 6.0, Color(0.9, 0.9, 0.1))
 
 func draw_build_preview():
 	if not grid.is_tile_in_bounds(hovered_tile):
 		return
 
-	var world_pos = grid.grid_to_world(hovered_tile)
-	var rect = Rect2(world_pos, Vector2(grid.TILE_SIZE, grid.TILE_SIZE))
+	var center := grid.grid_to_world(hovered_tile)
+	var polygon := _hex_fill_points(center)
 
 	var color := Color(1, 1, 1, 0.3)
 
@@ -86,45 +81,45 @@ func draw_build_preview():
 		grid.BuildingType.STORAGE:
 			color = Color(0.3, 0.9, 0.3, 0.3)
 
-	draw_rect(rect, color, true)
+	draw_colored_polygon(polygon, color)
 
 	if selected_building == grid.BuildingType.CONVEYOR:
-		draw_direction_arrow(rect, selected_direction, Color(0.1, 0.1, 0.1, 0.5))
+		draw_direction_arrow(center, selected_direction, Color(0.1, 0.1, 0.1, 0.5))
+
+	if selected_building == grid.BuildingType.MINE:
+		draw_direction_arrow(center, selected_direction, Color(0.05, 0.2, 0.35, 0.5))
 
 func draw_hovered_tile():
 	if not grid.is_tile_in_bounds(hovered_tile):
 		return
 
-	var world_pos = grid.grid_to_world(hovered_tile)
-	draw_rect(
-		Rect2(world_pos, Vector2(grid.TILE_SIZE, grid.TILE_SIZE)),
-		Color(1.0, 1.0, 0.0, 0.18),
-		true
-	)
+	var center := grid.grid_to_world(hovered_tile)
+	draw_colored_polygon(_hex_fill_points(center), Color(1.0, 1.0, 0.0, 0.18))
 
-func draw_direction_arrow(rect: Rect2, direction: int, color: Color):
-	var center = rect.position + rect.size * 0.5
-	var dir := Vector2.ZERO
+func draw_direction_arrow(center: Vector2, direction: int, color: Color):
+	var dir := grid.direction_to_vector(direction)
 
-	match direction:
-		grid.Direction.UP:
-			dir = Vector2(0, -1)
-		grid.Direction.RIGHT:
-			dir = Vector2(1, 0)
-		grid.Direction.DOWN:
-			dir = Vector2(0, 1)
-		grid.Direction.LEFT:
-			dir = Vector2(-1, 0)
-
-	var shaft_len := 11.0
-	var head_len := 6.0
-	var head_width := 5.0
+	var shaft_len := grid.HEX_RADIUS * 0.55
+	var head_len := grid.HEX_RADIUS * 0.28
+	var head_width := grid.HEX_RADIUS * 0.22
 
 	var tip = center + dir * shaft_len
-	var base = center - dir * 4.0
+	var base = center - dir * (grid.HEX_RADIUS * 0.2)
 
 	draw_line(base, tip, color, 3.0)
 
 	var side = Vector2(-dir.y, dir.x) * head_width
 	draw_line(tip, tip - dir * head_len + side, color, 2.0)
 	draw_line(tip, tip - dir * head_len - side, color, 2.0)
+
+func _hex_fill_points(center: Vector2) -> PackedVector2Array:
+	var points := PackedVector2Array()
+	for i in range(6):
+		var angle := deg_to_rad(60.0 * i - 30.0)
+		points.append(center + Vector2(cos(angle), sin(angle)) * grid.HEX_RADIUS)
+	return points
+
+func _hex_outline_points(center: Vector2) -> PackedVector2Array:
+	var points := _hex_fill_points(center)
+	points.append(points[0])
+	return points
