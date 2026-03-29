@@ -75,7 +75,7 @@ func refresh_selected_building_panel(selected_building: int, build_mode_enabled:
 	if not build_mode_enabled:
 		building_name_label.text = "Brak wybranego budynku"
 		building_kind_label.text = "Rodzaj: —"
-		building_description_label.text = "Wybierz klawisz 1-4, aby wejść w tryb stawiania."
+		building_description_label.text = "Wybierz klawisz 1-5, aby wejść w tryb stawiania."
 		building_cost_label.visible = false
 		return
 
