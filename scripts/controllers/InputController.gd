@@ -13,6 +13,7 @@ const ACTION_BUILD_WALL := "build_wall"
 const ACTION_BUILD_MINE := "build_mine"
 const ACTION_BUILD_CONVEYOR := "build_conveyor"
 const ACTION_BUILD_STORAGE := "build_storage"
+const ACTION_BUILD_SOLAR_PANEL := "build_solar_panel"
 const ACTION_BUILD_DISABLE := "build_disable"
 const ACTION_ROTATE_BUILDING := "rotate_building"
 const ACTION_QUIT := "quit_game"
@@ -27,6 +28,7 @@ func setup_default_actions() -> void:
 	_register_action_if_missing(ACTION_BUILD_MINE, KEY_2)
 	_register_action_if_missing(ACTION_BUILD_CONVEYOR, KEY_3)
 	_register_action_if_missing(ACTION_BUILD_STORAGE, KEY_4)
+	_register_action_if_missing(ACTION_BUILD_SOLAR_PANEL, KEY_5)
 	_register_action_if_missing(ACTION_BUILD_DISABLE, KEY_0)
 	_register_action_if_missing(ACTION_ROTATE_BUILDING, KEY_R)
 	_register_action_if_missing(ACTION_QUIT, KEY_ESCAPE)
@@ -49,6 +51,9 @@ func handle_selection_actions() -> void:
 		build_mode_enabled = true
 	elif Input.is_action_pressed(ACTION_BUILD_STORAGE):
 		selected_building = GridManagerScript.BuildingType.STORAGE
+		build_mode_enabled = true
+	elif Input.is_action_pressed(ACTION_BUILD_SOLAR_PANEL):
+		selected_building = GridManagerScript.BuildingType.SOLAR_PANEL
 		build_mode_enabled = true
 
 	if previous_selection != selected_building or previous_mode != build_mode_enabled:
