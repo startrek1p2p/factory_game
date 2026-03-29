@@ -42,9 +42,6 @@ const BUILDING_DATA := {
 }
 
 @onready var renderer: WorldRenderer = $World/Renderer
-<<<<<<< HEAD
-@onready var hud: CanvasLayer = $HUD
-=======
 @onready var resources_panel: PanelContainer = $UI/TopRightMargin/ResourcesPanel
 @onready var resources_value_label: Label = $UI/TopRightMargin/ResourcesPanel/ResourcesVBox/ResourcesValue
 @onready var building_panel: PanelContainer = $UI/BottomRightMargin/SelectedBuildingPanel
@@ -52,14 +49,12 @@ const BUILDING_DATA := {
 @onready var building_kind_label: Label = $UI/BottomRightMargin/SelectedBuildingPanel/BuildingVBox/BuildingKind
 @onready var building_description_label: Label = $UI/BottomRightMargin/SelectedBuildingPanel/BuildingVBox/BuildingDescription
 @onready var building_cost_label: Label = $UI/BottomRightMargin/SelectedBuildingPanel/BuildingVBox/BuildingCost
->>>>>>> main
 
 func _ready():
 	renderer.grid = grid
 	renderer.hovered_tile = hovered_tile
 	renderer.selected_building = selected_building
 	renderer.selected_direction = selected_direction
-	update_hud()
 
 	print("Start systemu budowania")
 	update_ui_margins()
@@ -136,13 +131,6 @@ func handle_simulation(delta: float):
 	if tick_timer >= tick_interval:
 		tick_timer = 0.0
 		simulation.tick()
-<<<<<<< HEAD
-		update_hud()
-		print("Storage:", simulation.storage_count)
-
-func update_hud():
-	hud.update_metrics(simulation.get_terraform_metrics(), simulation.get_pressure_metrics())
-=======
 		refresh_resources_panel()
 		print("Storage:", simulation.storage_count)
 
@@ -194,4 +182,3 @@ func update_ui_margins():
 
 	resources_panel.custom_minimum_size.x = minf(MAX_PANEL_WIDTH, viewport_size.x * 0.36)
 	building_panel.custom_minimum_size.x = minf(MAX_PANEL_WIDTH, viewport_size.x * 0.36)
->>>>>>> main
