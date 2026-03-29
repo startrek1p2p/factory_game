@@ -291,7 +291,7 @@ func _get_energy_neighbors(tile: Vector2i, traversable_tiles: Dictionary, traver
 			continue
 		unique[adjacent_tile] = true
 
-	var tile_type := grid.get_building_at(tile)
+	var tile_type: int = int(grid.get_building_at(tile))
 	if tile_type == grid.BuildingType.ENERGY_NODE:
 		for other_tile in traversable_list:
 			if other_tile == tile:
