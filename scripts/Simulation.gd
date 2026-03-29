@@ -11,12 +11,12 @@ var reserved_sources: Dictionary = {}
 var active_mines: Dictionary = {}
 
 var energy_available: int = 0
-const SOLAR_OUTPUT_PER_TICK := 2
-const MINE_ENERGY_COST_PER_TICK := 1
+const SOLAR_OUTPUT_PER_TICK := 10
+const MINE_ENERGY_COST_PER_TICK := 10
 
 func _init(grid_manager):
 	grid = grid_manager
-	energy_available = int(economy_state.resources.get(EconomyStateScript.RESOURCE_ENERGY, 0))
+	energy_available = 0
 
 func tick():
 	planned_moves.clear()
@@ -32,7 +32,7 @@ func tick():
 	# przetwarzany przez kolejne etapy tego samego ticka.
 	var input_snapshot: Dictionary = snapshot_items_from_grid()
 	var next_state: Dictionary = input_snapshot.duplicate(true)
-	stage_generate_energy_from_solar_panels()
+	energy_available = stage_collect_energy_from_solar_panels()
 	prepare_active_mines_from_snapshot()
 
 	stage_mines_generate_into_next_state(input_snapshot, next_state)
@@ -156,7 +156,7 @@ func commit_next_state_to_grid(next_state: Dictionary):
 	for tile in next_state.keys():
 		grid.set_item_at(tile, next_state[tile])
 
-func stage_generate_energy_from_solar_panels() -> void:
+func stage_collect_energy_from_solar_panels() -> int:
 	var generated_energy := 0
 
 	for y in range(grid.GRID_HEIGHT):
@@ -166,7 +166,7 @@ func stage_generate_energy_from_solar_panels() -> void:
 			if cell["type"] == grid.BuildingType.SOLAR_PANEL:
 				generated_energy += SOLAR_OUTPUT_PER_TICK
 
-	energy_available += generated_energy
+	return generated_energy
 
 func prepare_active_mines_from_snapshot() -> void:
 	if MINE_ENERGY_COST_PER_TICK <= 0:
