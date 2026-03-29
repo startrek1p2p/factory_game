@@ -41,6 +41,7 @@ func draw_buildings():
 
 				grid.BuildingType.MINE:
 					draw_colored_polygon(polygon, Color(0.2, 0.6, 1.0))
+					draw_direction_arrow(center, cell["direction"], Color(0.05, 0.2, 0.35, 0.9))
 
 				grid.BuildingType.CONVEYOR:
 					draw_colored_polygon(polygon, Color(1.0, 0.7, 0.2))
@@ -84,6 +85,9 @@ func draw_build_preview():
 
 	if selected_building == grid.BuildingType.CONVEYOR:
 		draw_direction_arrow(center, selected_direction, Color(0.1, 0.1, 0.1, 0.5))
+
+	if selected_building == grid.BuildingType.MINE:
+		draw_direction_arrow(center, selected_direction, Color(0.05, 0.2, 0.35, 0.5))
 
 func draw_hovered_tile():
 	if not grid.is_tile_in_bounds(hovered_tile):
