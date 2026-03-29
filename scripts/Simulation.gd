@@ -27,7 +27,7 @@ func process_mines():
 
 			if cell["item"] != null:
 				var dir = cell["direction"]
-				var next_tile = tile + grid.direction_to_vector(dir)
+				var next_tile = grid.get_neighbor_tile(tile, dir)
 
 				if not grid.is_tile_in_bounds(next_tile):
 					continue
@@ -74,7 +74,7 @@ func process_conveyors():
 				continue
 
 			var dir = cell["direction"]
-			var next_tile = tile + grid.direction_to_vector(dir)
+			var next_tile = grid.get_neighbor_tile(tile, dir)
 
 			if not grid.is_tile_in_bounds(next_tile):
 				continue
