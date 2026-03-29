@@ -30,6 +30,7 @@ Gracz jako operator kolonii terraformującej ląduje na planecie, która wydaje 
 - Prosty model fal zagrożenia (co X minut / progów terraformacji).
 - HUD z jasnym celem i postępem terraformacji.
 - Ekran wyniku stanu planety (stabilizacja albo eskalacja reakcji).
+- Reguła ekonomii: **Kopalnia bez energii nie wydobywa.**
 
 ### Czego NIE robimy w MVP
 - Rozbudowane drzewko technologii,
