@@ -72,7 +72,7 @@ func draw_items():
 			draw_circle(center, 6.0, Color(0.9, 0.9, 0.1))
 
 func draw_energy_links():
-	var all_energy_tiles: Array[Vector2i] = []
+	var non_node_tiles: Array[Vector2i] = []
 	var energy_nodes: Array[Vector2i] = []
 
 	for y in range(grid.GRID_HEIGHT):
@@ -81,19 +81,26 @@ func draw_energy_links():
 			var building_type: int = int(grid.get_building_at(tile))
 			if not _is_energy_link_candidate(building_type):
 				continue
-			all_energy_tiles.append(tile)
 			if building_type == grid.BuildingType.ENERGY_NODE:
 				energy_nodes.append(tile)
+			else:
+				non_node_tiles.append(tile)
+
+	var drawn_pairs: Dictionary = {}
+
+	for target_tile in non_node_tiles:
+		var assigned_node = _select_best_energy_node_for_tile(target_tile, energy_nodes)
+		if assigned_node == null:
+			continue
+		_draw_energy_line_once(assigned_node, target_tile, drawn_pairs)
 
 	for node_tile in energy_nodes:
-		var node_center: Vector2 = grid.grid_to_world(node_tile)
-		for target_tile in all_energy_tiles:
-			if target_tile == node_tile:
+		for other_node in energy_nodes:
+			if node_tile == other_node:
 				continue
-			if not _is_in_energy_node_range(node_tile, target_tile):
+			if not _is_in_energy_node_range(node_tile, other_node):
 				continue
-			var target_center: Vector2 = grid.grid_to_world(target_tile)
-			draw_line(node_center, target_center, ENERGY_LINK_COLOR, ENERGY_LINK_WIDTH)
+			_draw_energy_line_once(node_tile, other_node, drawn_pairs)
 
 func draw_build_preview():
 	if not grid.is_tile_in_bounds(hovered_tile):
@@ -164,6 +171,39 @@ func _hex_distance(a: Vector2i, b: Vector2i) -> int:
 	var dr := axial_a.y - axial_b.y
 	var ds := (-axial_a.x - axial_a.y) - (-axial_b.x - axial_b.y)
 	return int((abs(dq) + abs(dr) + abs(ds)) / 2)
+
+func _select_best_energy_node_for_tile(tile: Vector2i, energy_nodes: Array[Vector2i]):
+	var best_distance := INF
+	var tied_nodes: Array[Vector2i] = []
+
+	for node_tile in energy_nodes:
+		var distance := _hex_distance(node_tile, tile)
+		if distance > grid.ENERGY_NODE_RANGE:
+			continue
+		if distance < best_distance:
+			best_distance = distance
+			tied_nodes = [node_tile]
+		elif distance == best_distance:
+			tied_nodes.append(node_tile)
+
+	if tied_nodes.is_empty():
+		return null
+	if tied_nodes.size() == 1:
+		return tied_nodes[0]
+
+	var hash_value := int(abs(tile.x * 73856093 + tile.y * 19349663))
+	return tied_nodes[hash_value % tied_nodes.size()]
+
+func _draw_energy_line_once(from_tile: Vector2i, to_tile: Vector2i, drawn_pairs: Dictionary) -> void:
+	var a_key := "%d,%d" % [from_tile.x, from_tile.y]
+	var b_key := "%d,%d" % [to_tile.x, to_tile.y]
+	var pair_key := a_key + "|" + b_key if a_key < b_key else b_key + "|" + a_key
+	if drawn_pairs.has(pair_key):
+		return
+	drawn_pairs[pair_key] = true
+	var from_center: Vector2 = grid.grid_to_world(from_tile)
+	var to_center: Vector2 = grid.grid_to_world(to_tile)
+	draw_line(from_center, to_center, ENERGY_LINK_COLOR, ENERGY_LINK_WIDTH)
 
 func _hex_fill_points(center: Vector2) -> PackedVector2Array:
 	var points := PackedVector2Array()
