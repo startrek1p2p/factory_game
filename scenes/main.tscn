@@ -4,6 +4,22 @@
 [ext_resource type="Script" uid="uid://dlxg2y3fv45vu" path="res://scripts/camera_2d.gd" id="2_0wfyh"]
 [ext_resource type="Script" uid="uid://cdw58ipvpugin" path="res://scripts/WorldRenderer.gd" id="3_sugp2"]
 
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_ui_panel"]
+bg_color = Color(0.07, 0.09, 0.12, 0.72)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.3, 0.36, 0.42, 0.35)
+corner_radius_top_left = 10
+corner_radius_top_right = 10
+corner_radius_bottom_right = 10
+corner_radius_bottom_left = 10
+content_margin_left = 14.0
+content_margin_top = 12.0
+content_margin_right = 14.0
+content_margin_bottom = 12.0
+
 [node name="Main" type="Node2D" unique_id=690783723]
 script = ExtResource("1_o5qli")
 
@@ -30,7 +46,6 @@ grow_horizontal = 0
 
 [node name="ResourcesPanel" type="PanelContainer" parent="UI/TopRightMargin"]
 size_flags_horizontal = 3
-
 theme_override_styles/panel = SubResource("StyleBoxFlat_ui_panel")
 
 [node name="ResourcesVBox" type="VBoxContainer" parent="UI/TopRightMargin/ResourcesPanel"]
@@ -62,7 +77,6 @@ grow_vertical = 0
 
 [node name="SelectedBuildingPanel" type="PanelContainer" parent="UI/BottomRightMargin"]
 size_flags_horizontal = 3
-
 theme_override_styles/panel = SubResource("StyleBoxFlat_ui_panel")
 
 [node name="BuildingVBox" type="VBoxContainer" parent="UI/BottomRightMargin/SelectedBuildingPanel"]
@@ -97,19 +111,3 @@ text = "Koszt:"
 autowrap_mode = 2
 theme_override_colors/font_color = Color(0.9, 0.95, 1, 0.95)
 theme_override_font_sizes/font_size = 14
-
-[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_ui_panel"]
-bg_color = Color(0.07, 0.09, 0.12, 0.72)
-border_width_left = 1
-border_width_top = 1
-border_width_right = 1
-border_width_bottom = 1
-border_color = Color(0.3, 0.36, 0.42, 0.35)
-corner_radius_top_left = 10
-corner_radius_top_right = 10
-corner_radius_bottom_right = 10
-corner_radius_bottom_left = 10
-content_margin_left = 14.0
-content_margin_top = 12.0
-content_margin_right = 14.0
-content_margin_bottom = 12.0
