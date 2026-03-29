@@ -5,6 +5,8 @@ var grid
 var hovered_tile: Vector2i = Vector2i(-1, -1)
 var selected_building: int = 0
 var selected_direction: int = 0
+const ENERGY_LINK_COLOR := Color(1.0, 0.95, 0.75, 0.9)
+const ENERGY_LINK_WIDTH := 2.2
 
 func _draw():
 	if grid == null:
@@ -13,6 +15,7 @@ func _draw():
 	draw_grid()
 	draw_hovered_tile()
 	draw_buildings()
+	draw_energy_links()
 	draw_items()
 	draw_build_preview()
 
@@ -68,6 +71,30 @@ func draw_items():
 			var center = grid.grid_to_world(tile)
 			draw_circle(center, 6.0, Color(0.9, 0.9, 0.1))
 
+func draw_energy_links():
+	var all_energy_tiles: Array[Vector2i] = []
+	var energy_nodes: Array[Vector2i] = []
+
+	for y in range(grid.GRID_HEIGHT):
+		for x in range(grid.GRID_WIDTH):
+			var tile := Vector2i(x, y)
+			var building_type := grid.get_building_at(tile)
+			if not _is_energy_link_candidate(building_type):
+				continue
+			all_energy_tiles.append(tile)
+			if building_type == grid.BuildingType.ENERGY_NODE:
+				energy_nodes.append(tile)
+
+	for node_tile in energy_nodes:
+		var node_center := grid.grid_to_world(node_tile)
+		for target_tile in all_energy_tiles:
+			if target_tile == node_tile:
+				continue
+			if not _is_in_energy_node_range(node_tile, target_tile):
+				continue
+			var target_center := grid.grid_to_world(target_tile)
+			draw_line(node_center, target_center, ENERGY_LINK_COLOR, ENERGY_LINK_WIDTH)
+
 func draw_build_preview():
 	if not grid.is_tile_in_bounds(hovered_tile):
 		return
@@ -121,6 +148,22 @@ func draw_direction_arrow(center: Vector2, direction: int, color: Color):
 	var side = Vector2(-dir.y, dir.x) * head_width
 	draw_line(tip, tip - dir * head_len + side, color, 2.0)
 	draw_line(tip, tip - dir * head_len - side, color, 2.0)
+
+func _is_energy_link_candidate(building_type: int) -> bool:
+	return building_type == grid.BuildingType.SOLAR_PANEL \
+		or building_type == grid.BuildingType.ENERGY_NODE \
+		or building_type == grid.BuildingType.MINE
+
+func _is_in_energy_node_range(node_tile: Vector2i, target_tile: Vector2i) -> bool:
+	return _hex_distance(node_tile, target_tile) <= grid.ENERGY_NODE_RANGE
+
+func _hex_distance(a: Vector2i, b: Vector2i) -> int:
+	var axial_a: Vector2i = grid.offset_to_axial(a)
+	var axial_b: Vector2i = grid.offset_to_axial(b)
+	var dq := axial_a.x - axial_b.x
+	var dr := axial_a.y - axial_b.y
+	var ds := (-axial_a.x - axial_a.y) - (-axial_b.x - axial_b.y)
+	return int((abs(dq) + abs(dr) + abs(ds)) / 2)
 
 func _hex_fill_points(center: Vector2) -> PackedVector2Array:
 	var points := PackedVector2Array()

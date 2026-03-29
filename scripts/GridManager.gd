@@ -5,6 +5,7 @@ const HEX_RADIUS := 20.0
 const SQRT3 := 1.7320508075688772
 const GRID_WIDTH := 40
 const GRID_HEIGHT := 25
+const ENERGY_NODE_RANGE := 4
 
 # Dla kompatybilności z istniejącymi odwołaniami.
 const TILE_SIZE := int(HEX_RADIUS * 2.0)

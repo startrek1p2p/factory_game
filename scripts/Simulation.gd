@@ -229,6 +229,8 @@ func build_energy_network_components() -> void:
 	mine_to_component.clear()
 	component_has_panel.clear()
 	var traversable_tiles: Dictionary = {}
+	var traversable_list: Array[Vector2i] = []
+	var energy_nodes: Array[Vector2i] = []
 
 	for y in range(grid.GRID_HEIGHT):
 		for x in range(grid.GRID_WIDTH):
@@ -236,6 +238,9 @@ func build_energy_network_components() -> void:
 			var building_type = grid.get_building_at(tile)
 			if _is_energy_network_tile(building_type):
 				traversable_tiles[tile] = true
+				traversable_list.append(tile)
+			if building_type == grid.BuildingType.ENERGY_NODE:
+				energy_nodes.append(tile)
 
 	var visited: Dictionary = {}
 	var component_id := 0
@@ -243,10 +248,10 @@ func build_energy_network_components() -> void:
 	for tile in traversable_tiles.keys():
 		if visited.has(tile):
 			continue
-		_build_component_from_seed(tile, component_id, traversable_tiles, visited)
+		_build_component_from_seed(tile, component_id, traversable_tiles, traversable_list, energy_nodes, visited)
 		component_id += 1
 
-func _build_component_from_seed(seed_tile: Vector2i, component_id: int, traversable_tiles: Dictionary, visited: Dictionary) -> void:
+func _build_component_from_seed(seed_tile: Vector2i, component_id: int, traversable_tiles: Dictionary, traversable_list: Array[Vector2i], energy_nodes: Array[Vector2i], visited: Dictionary) -> void:
 	var stack: Array[Vector2i] = [seed_tile]
 	visited[seed_tile] = true
 	var has_panel := false
@@ -260,15 +265,10 @@ func _build_component_from_seed(seed_tile: Vector2i, component_id: int, traversa
 		elif current_type == grid.BuildingType.MINE:
 			mine_to_component[current_tile] = component_id
 
-		for direction in range(6):
-			var neighbor_tile = grid.get_neighbor_tile(current_tile, direction)
-			if not grid.is_tile_in_bounds(neighbor_tile):
-				continue
-			if not traversable_tiles.has(neighbor_tile):
-				continue
+		var energy_neighbors: Array[Vector2i] = _get_energy_neighbors(current_tile, traversable_tiles, traversable_list, energy_nodes)
+		for neighbor_tile in energy_neighbors:
 			if visited.has(neighbor_tile):
 				continue
-
 			visited[neighbor_tile] = true
 			stack.append(neighbor_tile)
 
@@ -278,6 +278,46 @@ func _is_energy_network_tile(building_type: int) -> bool:
 	return building_type == grid.BuildingType.SOLAR_PANEL \
 		or building_type == grid.BuildingType.ENERGY_NODE \
 		or building_type == grid.BuildingType.MINE
+
+func _get_energy_neighbors(tile: Vector2i, traversable_tiles: Dictionary, traversable_list: Array[Vector2i], energy_nodes: Array[Vector2i]) -> Array[Vector2i]:
+	var neighbors: Array[Vector2i] = []
+	var unique: Dictionary = {}
+
+	for direction in range(6):
+		var adjacent_tile = grid.get_neighbor_tile(tile, direction)
+		if not grid.is_tile_in_bounds(adjacent_tile):
+			continue
+		if not traversable_tiles.has(adjacent_tile):
+			continue
+		unique[adjacent_tile] = true
+
+	var tile_type := grid.get_building_at(tile)
+	if tile_type == grid.BuildingType.ENERGY_NODE:
+		for other_tile in traversable_list:
+			if other_tile == tile:
+				continue
+			if _is_in_energy_node_range(tile, other_tile):
+				unique[other_tile] = true
+	else:
+		for node_tile in energy_nodes:
+			if _is_in_energy_node_range(node_tile, tile):
+				unique[node_tile] = true
+
+	for linked_tile in unique.keys():
+		neighbors.append(linked_tile)
+
+	return neighbors
+
+func _is_in_energy_node_range(node_tile: Vector2i, target_tile: Vector2i) -> bool:
+	return _hex_distance(node_tile, target_tile) <= grid.ENERGY_NODE_RANGE
+
+func _hex_distance(a: Vector2i, b: Vector2i) -> int:
+	var axial_a: Vector2i = grid.offset_to_axial(a)
+	var axial_b: Vector2i = grid.offset_to_axial(b)
+	var dq := axial_a.x - axial_b.x
+	var dr := axial_a.y - axial_b.y
+	var ds := (-axial_a.x - axial_a.y) - (-axial_b.x - axial_b.y)
+	return int((abs(dq) + abs(dr) + abs(ds)) / 2)
 
 func is_mine_powered(tile: Vector2i) -> bool:
 	var component_id = mine_to_component.get(tile, null)
