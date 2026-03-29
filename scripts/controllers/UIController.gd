@@ -34,7 +34,7 @@ const BUILDING_DATA := {
 	GridManagerScript.BuildingType.SOLAR_PANEL: {
 		"name": "Panel słoneczny",
 		"kind": "energia",
-		"description": "Generuje energię co tick i zasila infrastrukturę wydobywczą.",
+		"description": "Zapewnia stałą moc dla infrastruktury wydobywczej.",
 		"cost": {"Minerały": 5, "Biomasa": 1}
 	}
 }

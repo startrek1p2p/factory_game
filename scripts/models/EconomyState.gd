@@ -7,7 +7,7 @@ const RESOURCE_BIOMASS := "Biomasa"
 
 var resources: Dictionary = {
 	RESOURCE_MINERALS: 100,
-	RESOURCE_ENERGY: 100,
+	RESOURCE_ENERGY: 0,
 	RESOURCE_BIOMASS: 100
 }
 
