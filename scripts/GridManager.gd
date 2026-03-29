@@ -15,7 +15,8 @@ enum BuildingType {
 	MINE,
 	CONVEYOR,
 	STORAGE,
-	SOLAR_PANEL
+	SOLAR_PANEL,
+	ENERGY_NODE
 }
 
 enum Direction {

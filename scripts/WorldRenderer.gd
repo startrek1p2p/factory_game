@@ -53,6 +53,9 @@ func draw_buildings():
 				grid.BuildingType.SOLAR_PANEL:
 					draw_colored_polygon(polygon, Color(0.95, 0.9, 0.25))
 
+				grid.BuildingType.ENERGY_NODE:
+					draw_colored_polygon(polygon, Color(0.65, 0.45, 0.95))
+
 func draw_items():
 	for y in range(grid.GRID_HEIGHT):
 		for x in range(grid.GRID_WIDTH):
@@ -85,6 +88,8 @@ func draw_build_preview():
 			color = Color(0.3, 0.9, 0.3, 0.3)
 		grid.BuildingType.SOLAR_PANEL:
 			color = Color(0.95, 0.9, 0.25, 0.3)
+		grid.BuildingType.ENERGY_NODE:
+			color = Color(0.65, 0.45, 0.95, 0.3)
 
 	draw_colored_polygon(polygon, color)
 
