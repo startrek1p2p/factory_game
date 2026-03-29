@@ -1,8 +1,10 @@
 class_name Simulation
 extends RefCounted
 
+const EconomyStateScript = preload("res://scripts/models/EconomyState.gd")
+
 var grid
-var storage_count: int = 0
+var economy_state := EconomyStateScript.new()
 var planned_moves: Array = []
 var reserved_targets: Dictionary = {}
 var reserved_sources: Dictionary = {}
@@ -134,7 +136,7 @@ func apply_planned_moves_to_next_state(next_state: Dictionary):
 		if to_cell["type"] == grid.BuildingType.CONVEYOR:
 			next_state[to_tile] = move["item"]
 		elif to_cell["type"] == grid.BuildingType.STORAGE:
-			storage_count += 1
+			economy_state.add_resource(EconomyStateScript.RESOURCE_MINERALS, 1)
 
 func commit_next_state_to_grid(next_state: Dictionary):
 	for tile in next_state.keys():

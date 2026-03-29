@@ -42,6 +42,8 @@ var building_name_label: Label
 var building_kind_label: Label
 var building_description_label: Label
 var building_cost_label: Label
+var status_label: Label
+var status_clear_at_seconds: float = 0.0
 
 func setup(main_node: Node) -> void:
 	top_right_margin = main_node.get_node("UI/TopRightMargin")
@@ -53,9 +55,15 @@ func setup(main_node: Node) -> void:
 	building_kind_label = main_node.get_node("UI/BottomRightMargin/SelectedBuildingPanel/BuildingVBox/BuildingKind")
 	building_description_label = main_node.get_node("UI/BottomRightMargin/SelectedBuildingPanel/BuildingVBox/BuildingDescription")
 	building_cost_label = main_node.get_node("UI/BottomRightMargin/SelectedBuildingPanel/BuildingVBox/BuildingCost")
+	status_label = main_node.get_node("UI/TopRightMargin/ResourcesPanel/ResourcesVBox/StatusLabel")
 
-func refresh_resources_panel(minerals: int, energy: int = 0, biomass: int = 0) -> void:
-	resources_value_label.text = "Minerały: %d\nEnergia: %d\nBiomasa/Impuls: %d" % [minerals, energy, biomass]
+func refresh_resources_panel(economy_state) -> void:
+	var resources: Dictionary = economy_state.resources
+	resources_value_label.text = "Minerały: %d\nEnergia: %d\nBiomasa: %d" % [
+		int(resources.get("Minerały", 0)),
+		int(resources.get("Energia", 0)),
+		int(resources.get("Biomasa", 0))
+	]
 
 func refresh_selected_building_panel(selected_building: int, build_mode_enabled: bool) -> void:
 	if not build_mode_enabled:
@@ -97,3 +105,16 @@ func _format_cost_data(cost_data: Dictionary) -> String:
 	for resource_name in cost_data.keys():
 		entries.append("%s %s" % [str(cost_data[resource_name]), resource_name])
 	return ", ".join(entries)
+
+func show_status_message(message: String, duration_seconds: float = 1.8) -> void:
+	status_label.text = message
+	status_label.visible = true
+	status_clear_at_seconds = Time.get_ticks_msec() / 1000.0 + duration_seconds
+
+func update_status_message() -> void:
+	if not status_label.visible:
+		return
+
+	var now_seconds := Time.get_ticks_msec() / 1000.0
+	if now_seconds >= status_clear_at_seconds:
+		status_label.visible = false

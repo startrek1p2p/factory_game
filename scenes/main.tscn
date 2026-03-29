@@ -57,10 +57,17 @@ theme_override_colors/font_color = Color(0.9, 0.95, 1, 0.95)
 theme_override_font_sizes/font_size = 18
 
 [node name="ResourcesValue" type="Label" parent="UI/TopRightMargin/ResourcesPanel/ResourcesVBox"]
-text = "Minerały: 0\nEnergia: 0\nBiomasa/Impuls: 0"
+text = "Minerały: 100\nEnergia: 100\nBiomasa: 100"
 autowrap_mode = 2
 theme_override_colors/font_color = Color(0.84, 0.88, 0.93, 0.95)
 theme_override_font_sizes/font_size = 15
+
+[node name="StatusLabel" type="Label" parent="UI/TopRightMargin/ResourcesPanel/ResourcesVBox"]
+visible = false
+text = "Brak zasobów"
+autowrap_mode = 2
+theme_override_colors/font_color = Color(0.95, 0.42, 0.42, 0.95)
+theme_override_font_sizes/font_size = 13
 
 [node name="BottomRightMargin" type="MarginContainer" parent="UI"]
 anchors_preset = 10

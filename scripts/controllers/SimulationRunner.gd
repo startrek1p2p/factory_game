@@ -1,7 +1,7 @@
 class_name SimulationRunner
 extends RefCounted
 
-signal tick_completed(storage_count: int)
+signal tick_completed()
 
 var simulation
 var tick_timer: float = 0.0
@@ -19,4 +19,4 @@ func process(delta: float) -> void:
 
 	tick_timer = 0.0
 	simulation.tick()
-	tick_completed.emit(simulation.storage_count)
+	tick_completed.emit()
