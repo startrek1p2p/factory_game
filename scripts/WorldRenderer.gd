@@ -84,7 +84,7 @@ func draw_items():
 				continue
 
 			var center = grid.grid_to_world(tile)
-			draw_circle(center, 6.0, _item_color(str(item)))
+			_draw_outlined_circle(center, 6.0, _item_color(str(item)), 1.2)
 
 func draw_build_preview():
 	if not grid.is_tile_in_bounds(hovered_tile):
@@ -157,16 +157,16 @@ func _draw_resource_dots(center: Vector2, dot_color: Color) -> void:
 		Vector2(0.0, 6.0)
 	]
 	for offset in offsets:
-		draw_circle(center + offset, 3.2, dot_color)
+		_draw_outlined_circle(center + offset, 3.2, dot_color, 1.0)
 
 func _draw_tree_icon(center: Vector2) -> void:
 	var trunk_color := Color(0.46, 0.3, 0.16, 0.95)
 	var leaves_color := Color(0.3, 0.78, 0.36, 0.95)
 
 	draw_line(center + Vector2(0.0, 7.0), center + Vector2(0.0, -1.0), trunk_color, 2.8)
-	draw_circle(center + Vector2(0.0, -6.0), 5.0, leaves_color)
-	draw_circle(center + Vector2(-5.0, -2.5), 4.0, leaves_color)
-	draw_circle(center + Vector2(5.0, -2.5), 4.0, leaves_color)
+	_draw_outlined_circle(center + Vector2(0.0, -6.0), 5.0, leaves_color, 1.0)
+	_draw_outlined_circle(center + Vector2(-5.0, -2.5), 4.0, leaves_color, 1.0)
+	_draw_outlined_circle(center + Vector2(5.0, -2.5), 4.0, leaves_color, 1.0)
 
 func _item_color(item_name: String) -> Color:
 	match item_name:
@@ -176,3 +176,8 @@ func _item_color(item_name: String) -> Color:
 			return Color(0.28, 0.72, 1.0)
 		_:
 			return Color(1.0, 0.62, 0.24)
+
+func _draw_outlined_circle(center: Vector2, radius: float, fill_color: Color, outline_width: float = 1.0) -> void:
+	var outline_color := Color(0.02, 0.02, 0.02, 0.95)
+	draw_circle(center, radius + outline_width, outline_color)
+	draw_circle(center, radius, fill_color)
