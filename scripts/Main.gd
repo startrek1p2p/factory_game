@@ -29,7 +29,7 @@ func _ready() -> void:
 	print("Start systemu budowania")
 	_sync_renderer_state()
 	ui_controller.update_ui_margins(get_viewport_rect().size)
-	ui_controller.refresh_resources_panel(simulation.storage_count)
+	ui_controller.refresh_resources_panel(simulation.economy_state)
 	ui_controller.refresh_selected_building_panel(input_controller.selected_building, input_controller.build_mode_enabled)
 	renderer.queue_redraw()
 
@@ -37,6 +37,7 @@ func _process(delta: float) -> void:
 	input_controller.handle_selection_actions()
 	simulation_runner.process(delta)
 	ui_controller.update_ui_margins(get_viewport_rect().size)
+	ui_controller.update_status_message()
 
 	var mouse_pos := get_global_mouse_position()
 	input_controller.update_hovered_tile(mouse_pos, grid)
@@ -56,7 +57,16 @@ func _on_direction_changed(selected_direction: int) -> void:
 	renderer.queue_redraw()
 
 func _on_build_requested(tile: Vector2i, building_type: int, direction: int) -> void:
+	var building_data: Dictionary = UIControllerScript.BUILDING_DATA.get(building_type, {})
+	var cost: Dictionary = building_data.get("cost", {})
+
+	if not simulation.economy_state.can_afford(cost):
+		ui_controller.show_status_message("Za mało zasobów na ten budynek.")
+		return
+
+	simulation.economy_state.spend(cost)
 	grid.place_building(tile, building_type, direction)
+	ui_controller.refresh_resources_panel(simulation.economy_state)
 	renderer.queue_redraw()
 
 func _on_clear_requested(tile: Vector2i) -> void:
@@ -66,9 +76,9 @@ func _on_clear_requested(tile: Vector2i) -> void:
 func _on_quit_requested() -> void:
 	get_tree().quit()
 
-func _on_simulation_tick_completed(storage_count: int) -> void:
-	ui_controller.refresh_resources_panel(storage_count)
-	print("Storage:", storage_count)
+func _on_simulation_tick_completed() -> void:
+	ui_controller.refresh_resources_panel(simulation.economy_state)
+	print("Zasoby:", simulation.economy_state.resources)
 
 func _sync_renderer_state() -> void:
 	renderer.hovered_tile = input_controller.hovered_tile
