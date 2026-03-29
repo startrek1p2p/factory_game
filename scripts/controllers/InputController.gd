@@ -64,13 +64,19 @@ func handle_input_event(event: InputEvent, mouse_position: Vector2, grid) -> voi
 		if event.is_action_pressed(ACTION_QUIT):
 			quit_requested.emit()
 		if event.is_action_pressed(ACTION_ROTATE_BUILDING):
-			selected_direction = (selected_direction + 1) % 6
-			direction_changed.emit(selected_direction)
+			_rotate_direction(1)
 		if event.is_action_pressed(ACTION_BUILD_DISABLE):
 			build_mode_enabled = false
 			build_mode_changed.emit(selected_building, build_mode_enabled)
 
 	if event is InputEventMouseButton and event.pressed:
+		if build_mode_enabled and event.button_index == MOUSE_BUTTON_WHEEL_UP:
+			_rotate_direction(1)
+			return
+		elif build_mode_enabled and event.button_index == MOUSE_BUTTON_WHEEL_DOWN:
+			_rotate_direction(-1)
+			return
+
 		var tile = grid.world_to_grid(mouse_position)
 		if not grid.is_tile_in_bounds(tile):
 			return
@@ -81,6 +87,10 @@ func handle_input_event(event: InputEvent, mouse_position: Vector2, grid) -> voi
 			build_requested.emit(tile, selected_building, selected_direction)
 		elif event.button_index == MOUSE_BUTTON_RIGHT:
 			clear_requested.emit(tile)
+
+func _rotate_direction(step: int) -> void:
+	selected_direction = posmod(selected_direction + step, 6)
+	direction_changed.emit(selected_direction)
 
 func _register_action_if_missing(action_name: String, keycode: Key) -> void:
 	if not InputMap.has_action(action_name):
