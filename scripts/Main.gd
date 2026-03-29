@@ -11,12 +11,14 @@ var tick_timer: float = 0.0
 var tick_interval: float = 0.3
 
 @onready var renderer: WorldRenderer = $World/Renderer
+@onready var hud: CanvasLayer = $HUD
 
 func _ready():
 	renderer.grid = grid
 	renderer.hovered_tile = hovered_tile
 	renderer.selected_building = selected_building
 	renderer.selected_direction = selected_direction
+	update_hud()
 
 	print("Start systemu budowania")
 	queue_redraw()
@@ -75,4 +77,8 @@ func handle_simulation(delta: float):
 	if tick_timer >= tick_interval:
 		tick_timer = 0.0
 		simulation.tick()
+		update_hud()
 		print("Storage:", simulation.storage_count)
+
+func update_hud():
+	hud.update_metrics(simulation.get_terraform_metrics(), simulation.get_pressure_metrics())
