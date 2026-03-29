@@ -71,9 +71,11 @@ func stage_mines_generate_into_next_state(input_snapshot: Dictionary, next_state
 				continue
 			if not is_mine_active(tile):
 				continue
+			if not grid.has_resource(tile):
+				continue
 
 			if input_snapshot[tile] == null:
-				next_state[tile] = "ore"
+				next_state[tile] = _resource_to_item_name(grid.get_resource_at(tile))
 
 func collect_mine_moves_from_snapshot(input_snapshot: Dictionary):
 	for y in range(grid.GRID_HEIGHT):
@@ -87,10 +89,12 @@ func collect_mine_moves_from_snapshot(input_snapshot: Dictionary):
 				continue
 			if not is_mine_active(tile):
 				continue
+			if not grid.has_resource(tile):
+				continue
 
 			var item = input_snapshot[tile]
 			if item == null:
-				item = "ore"
+				item = _resource_to_item_name(grid.get_resource_at(tile))
 
 			plan_single_step_move_from_snapshot(tile, cell["direction"], item, input_snapshot, "mine")
 
@@ -160,7 +164,7 @@ func apply_planned_moves_to_next_state(next_state: Dictionary):
 		if to_cell["type"] == grid.BuildingType.CONVEYOR:
 			next_state[to_tile] = move["item"]
 		elif to_cell["type"] == grid.BuildingType.STORAGE:
-			economy_state.add_resource(EconomyStateScript.RESOURCE_MINERALS, 1)
+			_add_item_to_economy(str(move["item"]))
 
 func commit_next_state_to_grid(next_state: Dictionary):
 	for tile in next_state.keys():
@@ -369,3 +373,22 @@ func get_power_debug_stats() -> Dictionary:
 		"powered_mines": powered_mines_count,
 		"unpowered_mines": unpowered_mines_count
 	}
+func _resource_to_item_name(resource_type: int) -> String:
+	match resource_type:
+		grid.ResourceType.IRON:
+			return "iron"
+		grid.ResourceType.BIOMASS:
+			return "biomass"
+		grid.ResourceType.TITANIUM:
+			return "titanium"
+		_:
+			return "iron"
+
+func _add_item_to_economy(item_name: String) -> void:
+	match item_name:
+		"biomass":
+			economy_state.add_resource(EconomyStateScript.RESOURCE_BIOMASS, 1)
+		"titanium":
+			economy_state.add_resource(EconomyStateScript.RESOURCE_TITANIUM, 1)
+		_:
+			economy_state.add_resource(EconomyStateScript.RESOURCE_MINERALS, 1)

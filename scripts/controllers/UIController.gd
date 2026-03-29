@@ -80,6 +80,7 @@ func refresh_resources_panel(economy_state, power_debug: Dictionary = {}) -> voi
 		powered_mines,
 		unpowered_mines
 	]
+	resources_value_label.text += "\nTytan: %d" % int(resources.get("Tytan", 0))
 
 func refresh_selected_building_panel(selected_building: int, build_mode_enabled: bool) -> void:
 	if not build_mode_enabled:
